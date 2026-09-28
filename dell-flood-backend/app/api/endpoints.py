@@ -165,8 +165,11 @@ def send_smtp_email(to_email: str, subject: str, body: str, attachment_path: str
     sender_password = os.getenv("SMTP_SENDER_PASSWORD", "")
     
     if not sender_email or not sender_password:
-        print(f"[SMTP Email Mock/Override] Forced sending to {to_email}: {subject}")
-        print(f"[SMTP Message]:\n{body}")
+        try:
+            print(f"[SMTP Email Mock/Override] Forced sending to {to_email}: {subject}")
+            print(f"[SMTP Message]:\n{body.encode('ascii', 'replace').decode('ascii')}")
+        except Exception:
+            pass
         return {"status": "SUCCESS", "message": "Mock overridden email logged to console."}
         
     try:
@@ -282,18 +285,17 @@ def trigger_voice_call(payload: VoiceCallRequest):
     auth_token = os.getenv("TWILIO_AUTH_TOKEN", "mock_auth_token_456")
     from_phone = os.getenv("TWILIO_PHONE_NUMBER", "+15017122661")
     
-    # Safety Override: Force call to the verified phone number
-    target_phone = "+917678656930"
+    target_phone = payload.phone_number.strip() if (payload.phone_number and payload.phone_number.strip()) else "+917678656930"
     
     twiml_instruction = f"""
     <Response>
-        <Say voice="alice" language="en-IN">
+        <Say voice="alice" language="en-US">
             {payload.message}
         </Say>
     </Response>
     """
     
-    print(f"[Twilio Voice Gateway] Triggering call to: {target_phone} (Overridden from {payload.phone_number}) from {from_phone}")
+    print(f"[Twilio Voice Gateway] Triggering call to: {target_phone} (Requested: {payload.phone_number}) from {from_phone}")
     
     if "ACmock" not in account_sid:
         try:
@@ -302,14 +304,14 @@ def trigger_voice_call(payload: VoiceCallRequest):
             auth_b64 = base64.b64encode(auth_str.encode()).decode()
             
             data = {
-                "Required": "true",
                 "To": target_phone,
                 "From": from_phone,
                 "Twiml": twiml_instruction
             }
             res = requests.post(url, data=data, headers={"Authorization": f"Basic {auth_b64}"})
             if res.status_code == 201:
-                return {"status": "SUCCESS", "message": f"Voice call dispatched successfully to {target_phone}."}
+                call_data = res.json()
+                return {"status": "SUCCESS", "message": f"Voice call dispatched successfully to {target_phone}.", "call_sid": call_data.get("sid")}
             else:
                 return {"status": "ERROR", "detail": res.text}
         except Exception as e:

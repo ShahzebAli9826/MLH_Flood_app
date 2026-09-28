@@ -684,7 +684,7 @@ export default function App() {
                   apiService.setApiUrl(text);
                 }}
                 autoCapitalize="none"
-                placeholder="http://10.142.212.139:8000/api"
+                placeholder="http://192.168.1.7:8000/api"
               />
             </View>
           )}

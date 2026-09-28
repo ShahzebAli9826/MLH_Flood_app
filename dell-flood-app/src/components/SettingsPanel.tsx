@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, TextInput, Switch, Alert } from 'react-native';
-import { Settings, Server, Shield, Check } from 'lucide-react-native';
-import { apiService } from '../services/api';
+import { Settings, Server, Shield, Check, RefreshCw } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiService, DEFAULT_API_URL } from '../services/api';
 
 export const SettingsPanel: React.FC = () => {
   const [useMock, setUseMock] = useState<boolean>(apiService.useMock);
@@ -19,6 +20,17 @@ export const SettingsPanel: React.FC = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
     Alert.alert('Configuration Saved', `Local Mock mode is now: ${useMock ? 'ON' : 'OFF'}\nAPI Endpoint: ${apiUrl}`);
+  };
+
+  const handleReset = async () => {
+    const defaultUrl = DEFAULT_API_URL || 'http://192.168.1.7:8000/api';
+    await AsyncStorage.removeItem('aegis_api_url');
+    await AsyncStorage.removeItem('aegis_use_mock');
+    await apiService.setApiUrl(defaultUrl);
+    await apiService.setUseMock(false);
+    setApiUrl(defaultUrl);
+    setUseMock(false);
+    Alert.alert('Reset Complete', `Settings cleared.\nAPI URL reset to: ${defaultUrl}\nMock mode: OFF\n\nThe app will now connect to the live backend.`);
   };
 
   return (
@@ -56,9 +68,11 @@ export const SettingsPanel: React.FC = () => {
             style={styles.input}
             value={apiUrl}
             onChangeText={setApiUrl}
-            placeholder="http://localhost:8000/api"
+            placeholder="http://192.168.1.7:8000/api"
             placeholderTextColor="#94a3b8"
             editable={!useMock}
+            autoCapitalize="none"
+            autoCorrect={false}
           />
         </View>
         {useMock && (
@@ -79,16 +93,23 @@ export const SettingsPanel: React.FC = () => {
             <Text style={styles.saveButtonText}>Apply Configurations</Text>
           </TouchableOpacity>
         )}
+
+        {/* Reset to Default Button */}
+        <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+          <RefreshCw size={14} color="#ef4444" style={{ marginRight: 6 }} />
+          <Text style={styles.resetButtonText}>Reset to Default (192.168.1.7)</Text>
+        </TouchableOpacity>
       </View>
       
       {/* Dev Info Footer */}
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Floor Rescuer System v1.0.0</Text>
+        <Text style={styles.footerText}>Flood Rescuer System v1.0.0</Text>
         <Text style={styles.footerSubText}>Model: SegFormer MiT-B2 Gated Fusion</Text>
       </View>
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -201,6 +222,22 @@ const styles = StyleSheet.create({
     color: '#065f46',
     fontSize: 13,
     fontWeight: 'bold'
+  },
+  resetButton: {
+    backgroundColor: '#fff1f2',
+    borderRadius: 8,
+    height: 36,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#fecaca'
+  },
+  resetButtonText: {
+    color: '#ef4444',
+    fontSize: 12,
+    fontWeight: '600'
   },
   footer: {
     marginTop: 40,

@@ -133,43 +133,113 @@ Mireye/
 
 ---
 
-###  Installation & Quickstart
+### 🚀 Installation & Full Quickstart Guide
 
-### 1. Clone & Setup Virtual Environment
+#### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-org/flux-disaster-intelligence.git
-cd flux-disaster-intelligence
-
-# Create and activate Python virtual environment
-python -m venv venv
-# On Windows:
-.\venv\Scripts\activate
-# On Linux/macOS:
-source venv/bin/activate
+git clone https://github.com/ShahzebAli9826/MLH_Flood_app.git
+cd MLH_Flood_app
 ```
 
- 2. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
+---
 
- 3. Configure API Credentials
-Create a `.env` file in the root directory:
-```bash
-cp .env.example .env
-```
-Edit `.env` and add your API credentials:
-```ini
-MIREYE_API_TOKEN=your_mireye_jwt_token_here
-MIREYE_BASE_URL=https://api.mireye.com/v1
-OPENAI_API_KEY=your_openai_api_key_here
-CACHE_TTL_HOURS=24
-```
+#### 2. Backend Setup (`dell-flood-backend`)
 
-### 4. Execute the Pipeline
-```bash
-python run_flux_master.py
-```
+1. **Navigate to backend folder:**
+   ```bash
+   cd dell-flood-backend
+   ```
+2. **Create & activate a virtual environment:**
+   ```bash
+   python -m venv venv
+   # On Windows (PowerShell):
+   .\venv\Scripts\activate
+   # On Linux / macOS:
+   source venv/bin/activate
+   ```
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. **Configure Environment Variables (`.env`):**
+   Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+   *Fill in optional API keys (OpenAI, Gemini, Sentinel Hub, Twilio, Mapbox) as needed.*
+
+5. **Start the FastAPI Backend Server:**
+   ```bash
+   python main.py
+   # Or directly via uvicorn (binding to all network interfaces for mobile access):
+   python -m uvicorn main:app --host 0.0.0.0 --port 8000
+   ```
+   - **Backend API:** `http://localhost:8000` or `http://<YOUR_LOCAL_IP>:8000`
+   - **Interactive API Docs:** `http://localhost:8000/docs`
+
+---
+
+#### 3. Frontend Web Setup (`dell-flood-app`)
+
+1. **Open a new terminal & navigate to app folder:**
+   ```bash
+   cd dell-flood-app
+   ```
+2. **Install Node.js dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Start on Website (React Native Web):**
+   ```bash
+   npm run web
+   # Or:
+   npx expo start --web
+   ```
+   - Access the live web app in browser at: `http://localhost:8081`
+
+---
+
+#### 4. Running on Mobile Phone using Expo Go 📱
+
+To run the mobile app on an actual Android or iOS device using **Expo Go**:
+
+1. **Connect to Same Wi-Fi:** Ensure your phone and development computer are connected to the **same local Wi-Fi network**.
+2. **Find Local IP Address:**
+   - **Windows:** Run `ipconfig` in CMD/PowerShell (look for IPv4 Address under Wireless LAN/Ethernet, e.g., `192.168.1.7`).
+   - **macOS / Linux:** Run `ifconfig` or `ip a` (e.g., `192.168.1.7`).
+3. **Configure API Endpoint:**
+   - By default, `dell-flood-app/src/services/api.ts` targets `http://192.168.1.7:8000/api`.
+   - If your IP is different, update `DEFAULT_API_URL` in `src/services/api.ts` or change it dynamically inside the **App Settings Panel** within the app UI.
+4. **Start Expo LAN Server:**
+   ```bash
+   npx expo start --lan
+   ```
+5. **Open in Expo Go:**
+   - **Android:** Open the **Expo Go** app, tap **Scan QR Code**, and scan the QR code printed in your terminal (or type `exp://<YOUR_LOCAL_IP>:8081`).
+   - **iOS:** Open the default **Camera App**, scan the QR code, and open in Expo Go.
+
+---
+
+#### 5. Building Standalone Android APK (EAS Build)
+
+To build a standalone installable `.apk` file for Android:
+
+1. Install EAS CLI (if not installed):
+   ```bash
+   npm install -g eas-cli
+   ```
+2. Run EAS Preview Build:
+   ```bash
+   npx eas-cli build --platform android --profile preview
+   ```
+3. Once completed on Expo Cloud, download and install the resulting `.apk` file directly on any Android phone.
+
+---
+
+### 🛡️ Environment & Git Security Configuration
+- `.env` files contain sensitive API credentials and are automatically ignored via `.gitignore`.
+- Reference templates are provided in `.env.example` in both root and `dell-flood-backend/`.
+- Heavy ML weights (`*.pth`, `*.onnx`) and build artifacts (`node_modules/`, `dist/`, `.expo/`) are excluded from Git history.
 
 ---
 

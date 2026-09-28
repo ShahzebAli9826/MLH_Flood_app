@@ -3,8 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const DEFAULT_API_URL = Platform.select({
   web: 'http://127.0.0.1:8000/api',
-  android: 'http://10.142.212.139:8000/api',
-  default: 'http://10.142.212.139:8000/api'
+  android: 'http://192.168.1.7:8000/api',
+  default: 'http://192.168.1.7:8000/api'
 });
 
 export interface ImpactStats {
@@ -99,7 +99,13 @@ export const apiService = {
     try {
       const savedUrl = await AsyncStorage.getItem('aegis_api_url');
       if (savedUrl) {
-        this.apiUrl = savedUrl;
+        // Auto-migrate old IP to new IP if user has a stale cached URL
+        const migratedUrl = savedUrl.replace('10.142.212.139', '192.168.1.7');
+        this.apiUrl = migratedUrl;
+        if (migratedUrl !== savedUrl) {
+          await AsyncStorage.setItem('aegis_api_url', migratedUrl);
+          console.log(`[API Service Init] Migrated stale IP to new LAN IP: ${migratedUrl}`);
+        }
       }
       const savedUseMock = await AsyncStorage.getItem('aegis_use_mock');
       if (savedUseMock !== null) {

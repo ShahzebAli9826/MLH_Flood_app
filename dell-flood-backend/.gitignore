@@ -13,3 +13,6 @@ chroma_data/
 *.sqlite3
 *.pth
 *.pt
+reports/*.pdf
+*.pdf
+

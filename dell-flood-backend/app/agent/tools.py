@@ -12,8 +12,7 @@ from reportlab.pdfgen import canvas
 
 # --- Twilio Alert Sender ---
 def send_sms_alert(phone_number, message):
-    # Safety Override: Force alerts to the verified presenter number
-    phone_number = "+917678656930"
+    phone_number = phone_number.strip() if (phone_number and str(phone_number).strip()) else "+917678656930"
     
     account_sid = os.getenv("TWILIO_ACCOUNT_SID")
     auth_token = os.getenv("TWILIO_AUTH_TOKEN")
@@ -37,8 +36,7 @@ def send_sms_alert(phone_number, message):
 
 # --- Twilio Outbound Voice/IVR Call ---
 def trigger_voice_call(phone_number, location, severity):
-    # Safety Override: Force alerts to the verified presenter number
-    phone_number = "+917678656930"
+    phone_number = phone_number.strip() if (phone_number and str(phone_number).strip()) else "+917678656930"
     
     account_sid = os.getenv("TWILIO_ACCOUNT_SID")
     auth_token = os.getenv("TWILIO_AUTH_TOKEN")
