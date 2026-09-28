@@ -53,18 +53,22 @@ class SituationReportGenerator:
         
         # 1. Google Gemini API (Recommended)
         if self.gemini_key:
-            try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={self.gemini_key}"
-                headers = {"Content-Type": "application/json"}
-                payload = {
-                    "contents": [{"parts": [{"text": prompt}]}]
-                }
-                res = requests.post(url, headers=headers, json=payload, timeout=15)
-                if res.status_code == 200:
-                    data = res.json()
-                    return data["candidates"][0]["content"]["parts"][0]["text"]
-            except Exception as e:
-                print(f"[RAG Generator] Gemini API error: {e}. Falling back...")
+            for model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self.gemini_key}"
+                    headers = {"Content-Type": "application/json"}
+                    payload = {
+                        "contents": [{"parts": [{"text": prompt}]}]
+                    }
+                    res = requests.post(url, headers=headers, json=payload, timeout=15)
+                    if res.status_code == 200:
+                        data = res.json()
+                        return data["candidates"][0]["content"]["parts"][0]["text"]
+                    else:
+                        print(f"[RAG Generator] Gemini model {model_name} HTTP {res.status_code}: {res.text[:150]}")
+                except Exception as e:
+                    print(f"[RAG Generator] Gemini API error ({model_name}): {e}. Trying next...")
+
 
         # 2. Groq Llama API
         if self.groq_key:

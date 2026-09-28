@@ -30,16 +30,14 @@ MIREYE_TIMEOUT = 120  # MirEye docs recommend at least 120s for /v1/ask
 def _check_keys() -> None:
     """Validate that required API keys are present."""
     missing = []
-    if not OPENAI_API_KEY:
-        missing.append("OPENAI_API_KEY")
-    if not MIREYE_API_TOKEN:
-        missing.append("MIREYE_API_TOKEN")
+    if not OPENAI_API_KEY and not os.getenv("GEMINI_API_KEY"):
+        missing.append("GEMINI_API_KEY or OPENAI_API_KEY")
     if missing:
         print(
-            f"[ERROR] Missing environment variable(s): {', '.join(missing)}\n"
-            "Please set them in a .env file. See .env.example for reference."
+            f"[WARNING] Missing environment variable(s): {', '.join(missing)}\n"
+            "Please set GEMINI_API_KEY in .env to enable AI chatbot reasoning."
         )
-        sys.exit(1)
+
 
 
 # ---------------------------------------------------------------------------
@@ -400,6 +398,37 @@ def process_chat_message(
     citations = []
     geocoded_coords = None
 
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if gemini_key:
+        try:
+            prompt_parts = [SYSTEM_PROMPT]
+            if location_context:
+                prompt_parts.append(f"LOCATION CONTEXT: {json.dumps(location_context)}")
+            if conversation_history:
+                for h in conversation_history[-5:]:
+                    role = h.get("role") or ("User" if h.get("sender") == "user" else "Assistant")
+                    txt = h.get("content") or h.get("text") or h.get("message") or ""
+                    if txt:
+                        prompt_parts.append(f"{role}: {txt}")
+            prompt_parts.append(f"User Question: {message}")
+            full_prompt = "\n\n".join(prompt_parts)
+
+            for model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_key}"
+                res = requests.post(url, headers={"Content-Type": "application/json"}, json={"contents": [{"parts": [{"text": full_prompt}]}]}, timeout=12)
+                if res.status_code == 200:
+                    reply_text = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    return {
+                        "reply": reply_text,
+                        "tool_calls_executed": executed_tools,
+                        "citations": citations or ["Google Gemini API"],
+                        "geocoded_coords": geocoded_coords
+                    }
+                else:
+                    print(f"[Gemini Chatbot] Model {model_name} HTTP {res.status_code}: {res.text[:150]}")
+        except Exception as e:
+            print(f"[Gemini Chatbot Error] {e}")
+
     try:
         response = client.chat.completions.create(
             model="gpt-4o",
@@ -489,11 +518,12 @@ def process_chat_message(
     except Exception as exc:
         print(f"[MirEye Chatbot API Error] {exc}")
         return {
-            "reply": f"Encountered an issue processing query with GPT-4o: {str(exc)}",
+            "reply": f"Encountered an issue processing query: {str(exc)}",
             "tool_calls_executed": executed_tools,
             "citations": citations,
             "geocoded_coords": geocoded_coords,
         }
+
 
 
 def run_chatbot() -> None:

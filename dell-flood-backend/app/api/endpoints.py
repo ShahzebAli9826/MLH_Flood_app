@@ -946,14 +946,17 @@ def broadcast_notification(payload: BroadcastNotificationRequest):
     alert_body = payload.message or f"A {payload.severity} severity flood covers {payload.area_sq_km:.2f} sq km. Evacuate immediately."
     
     if gemini_key and not payload.message:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
-            prompt = f"Write a very short, urgent push notification body (maximum 12 words) warning users that a {payload.severity} severity flood has been detected at {payload.location}. Do not include quotes or brackets. Just return the push notification text."
-            res = requests.post(url, headers={"Content-Type": "application/json"}, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=5)
-            if res.status_code == 200:
-                alert_body = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-        except Exception as e:
-            print(f"[Broadcast LLM Error] {e}")
+        for model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_key}"
+                prompt = f"Write a very short, urgent push notification body (maximum 12 words) warning users that a {payload.severity} severity flood has been detected at {payload.location}. Do not include quotes or brackets. Just return the push notification text."
+                res = requests.post(url, headers={"Content-Type": "application/json"}, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=5)
+                if res.status_code == 200:
+                    alert_body = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    break
+            except Exception as e:
+                print(f"[Broadcast LLM Error ({model_name})] {e}")
+
             
     # Send push notifications
     sent_count = 0
@@ -1734,15 +1737,19 @@ Answer:"""
 
     # Try Gemini
     if gemini_key:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
-            headers = {"Content-Type": "application/json"}
-            res = requests.post(url, headers=headers, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=10)
-            if res.status_code == 200:
-                text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
-                return {"response": text}
-        except Exception as e:
-            print(f"[Chat API] Gemini failed: {e}")
+        for model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_key}"
+                headers = {"Content-Type": "application/json"}
+                res = requests.post(url, headers=headers, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=10)
+                if res.status_code == 200:
+                    text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
+                    return {"response": text}
+                else:
+                    print(f"[Chat API] Gemini model {model_name} HTTP {res.status_code}: {res.text[:150]}")
+            except Exception as e:
+                print(f"[Chat API] Gemini failed ({model_name}): {e}")
+
 
     # Try Groq
     if groq_key:
