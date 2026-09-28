@@ -53,7 +53,7 @@ class SituationReportGenerator:
         
         # 1. Google Gemini API (Recommended)
         if self.gemini_key:
-            for model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+            for model_name in ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-2.0-flash"]:
                 try:
                     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self.gemini_key}"
                     headers = {"Content-Type": "application/json"}

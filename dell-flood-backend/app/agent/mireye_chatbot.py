@@ -398,6 +398,7 @@ def process_chat_message(
     citations = []
     geocoded_coords = None
 
+    load_dotenv(override=True)
     gemini_key = os.getenv("GEMINI_API_KEY")
     if gemini_key:
         try:
@@ -413,7 +414,7 @@ def process_chat_message(
             prompt_parts.append(f"User Question: {message}")
             full_prompt = "\n\n".join(prompt_parts)
 
-            for model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+            for model_name in ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-2.0-flash"]:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_key}"
                 res = requests.post(url, headers={"Content-Type": "application/json"}, json={"contents": [{"parts": [{"text": full_prompt}]}]}, timeout=12)
                 if res.status_code == 200:
@@ -421,11 +422,12 @@ def process_chat_message(
                     return {
                         "reply": reply_text,
                         "tool_calls_executed": executed_tools,
-                        "citations": citations or ["Google Gemini API"],
+                        "citations": citations or ["Google Gemini 2.5 Flash API"],
                         "geocoded_coords": geocoded_coords
                     }
                 else:
                     print(f"[Gemini Chatbot] Model {model_name} HTTP {res.status_code}: {res.text[:150]}")
+
         except Exception as e:
             print(f"[Gemini Chatbot Error] {e}")
 

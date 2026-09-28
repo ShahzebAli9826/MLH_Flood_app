@@ -946,7 +946,7 @@ def broadcast_notification(payload: BroadcastNotificationRequest):
     alert_body = payload.message or f"A {payload.severity} severity flood covers {payload.area_sq_km:.2f} sq km. Evacuate immediately."
     
     if gemini_key and not payload.message:
-        for model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+        for model_name in ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-2.0-flash"]:
             try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_key}"
                 prompt = f"Write a very short, urgent push notification body (maximum 12 words) warning users that a {payload.severity} severity flood has been detected at {payload.location}. Do not include quotes or brackets. Just return the push notification text."
@@ -1737,7 +1737,7 @@ Answer:"""
 
     # Try Gemini
     if gemini_key:
-        for model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+        for model_name in ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-2.0-flash"]:
             try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_key}"
                 headers = {"Content-Type": "application/json"}
